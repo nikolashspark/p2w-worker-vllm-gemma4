@@ -1,7 +1,6 @@
-FROM runpod/worker-v1-vllm:dev-refs-pull-277-merge
-# vLLM 1
+FROM runpod/worker-v1-vllm:v2.14.0
+
 RUN pip install --upgrade --force-reinstall \
       "vllm==0.19.1" \
       --extra-index-url https://download.pytorch.org/whl/cu129 \
- && pip install --upgrade "transformers>=5.5.3" \
- && sed -i -E 's/log_error_stack=[^,)]*,?//g' /src/engine.py
+ && pip install --upgrade "transformers>=5.5.3"
