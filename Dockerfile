@@ -1,4 +1,4 @@
-# CUDA 12.4 runtime is a good baseline for L4 (sm_89)
+# Base: CUDA 12.4 runtime (good baseline for L4 / sm_89)
 FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -6,24 +6,23 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# System deps
+# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv git curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# Install PyTorch for CUDA 12.4 (cu124)
-# If you prefer cu121, tell me and I’ll adjust.
+# PyTorch (CUDA 12.4 build)
 RUN pip install --index-url https://download.pytorch.org/whl/cu124 \
     torch torchvision torchaudio
 
-# Install vLLM + server libs
-# transformers is kept in <5 for stability; if you truly need bleeding-edge, see note below.
+# vLLM + Runpod handler deps
+# Pin Transformers exactly to 5.5.3 as requested
 RUN pip install \
     "vllm==0.19.1" \
     runpod \
-    "transformers>=4.45.0,<5" \
+    "transformers==5.5.3" \
     accelerate \
     safetensors \
     huggingface_hub
@@ -31,11 +30,10 @@ RUN pip install \
 # Copy your handler
 COPY handler.py /handler.py
 
-# Optional: model download auth
+# Optional: Hugging Face auth token for private/gated models
 # ENV HF_TOKEN=...
 
-# vLLM specific (NOTE: your earlier env var name is not recognized by vLLM 0.19.1)
-# Keep trust_remote_code in your vLLM config/args instead of env var.
+# vLLM runtime option
 ENV VLLM_ENABLE_CUDA_COMPATIBILITY=1
 
 CMD ["python3", "-u", "/handler.py"]
