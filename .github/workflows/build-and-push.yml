@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch: # Дозволяє запускати збірку вручну кнопкою в GitHub
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,14 +24,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set short git commit SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           platforms: linux/amd64
-          # Використовуємо lowercase для назви репозиторію (GHCR інколи чутливий до регістру)
-          tags: ghcr.io/${{ github.repository_owner }}/worker-vllm-gemma4:latest
+          # Додаємо два теги: фіксований SHA та рухомий latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/worker-vllm-gemma4:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ github.repository_owner }}/worker-vllm-gemma4:latest
           # КЕШУВАННЯ: Значно прискорює наступні збірки
           cache-from: type=gha
           cache-to: type=gha,mode=max
