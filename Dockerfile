@@ -6,10 +6,16 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# System dependencies
+# System dependencies (+ compiler toolchain for Triton/Inductor JIT)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git curl ca-certificates \
+    python3 python3-pip python3-venv \
+    git curl ca-certificates \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# (Optional but helps Triton/Inductor reliably find a compiler)
+ENV CC=/usr/bin/gcc \
+    CXX=/usr/bin/g++
 
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
@@ -18,7 +24,7 @@ RUN pip install --index-url https://download.pytorch.org/whl/cu124 \
     torch torchvision torchaudio
 
 # vLLM + Runpod handler deps
-# Pin Transformers exactly to 5.5.3 as requested
+# Keep your Transformers pin
 RUN pip install \
     "vllm==0.19.1" \
     runpod \
@@ -27,11 +33,8 @@ RUN pip install \
     safetensors \
     huggingface_hub
 
-# Copy your handler
+# Copy handler
 COPY handler.py /handler.py
-
-# Optional: Hugging Face auth token for private/gated models
-# ENV HF_TOKEN=...
 
 # vLLM runtime option
 ENV VLLM_ENABLE_CUDA_COMPATIBILITY=1
